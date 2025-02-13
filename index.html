@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анимация сердца</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script defer src="script.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: white;
+        }
+        #text-container {
+            position: absolute;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: black;
+            font-size: 24px;
+            cursor: pointer;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 10;
+        }
+        canvas {
+            display: block;
+        }
+        .heart {
+            position: absolute;
+            color: red;
+            font-size: 20px;
+            animation: floatUp 3s linear infinite;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="text-container" onclick="nextText()">тыцяй не стесняйся котя^^</div>
+    <script>
+        const messages = ["я хочу тебе...", "кое что...", "важное сказать...", "Котик ты стала для меня самым важным человком в моей жизни я тебя очень сильно люблю и ценю.. эта цифровая валентинка тебе..)"];
+        let index = 0;
+        const textContainer = document.getElementById("text-container");
+
+        function nextText() {
+            if (index < messages.length) {
+                textContainer.textContent = messages[index];
+                index++;
+            } else {
+                textContainer.style.display = "none";
+                startHeartAnimation();
+            }
+        }
+        function nextText() {
+            if (index < messages.length) {
+                createHeart();
+                textContainer.textContent = messages[index];
+                index++;
+            } else {
+                textContainer.style.display = "none";
+                document.body.style.backgroundColor = "black";
+                clearInterval(heartsInterval);
+                startHeartAnimation();
+            }
+        }
+
+        function createHeart() {
+            const heart = document.createElement("div");
+            heart.textContent = "❤️";
+            heart.classList.add("heart");
+            document.body.appendChild(heart);
+            
+            heart.style.left = `${Math.random() * window.innerWidth}px`;
+            heart.style.top = `${Math.random() * window.innerHeight}px`;
+            
+            setTimeout(() => heart.remove(), 3000);
+        }
+
+        heartsInterval = setInterval(createHeart, 300);
+
+
+        function startHeartAnimation() {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            const particleCount = 5000;
+            const geometry = new THREE.BufferGeometry();
+            const vertices = new Float32Array(particleCount * 3);
+            const targetPositions = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount; i++) {
+                // Исходные случайные позиции
+                vertices[i * 3] = (Math.random() - 0.5) * 50;
+                vertices[i * 3 + 1] = (Math.random() - 0.5) * 50;
+                vertices[i * 3 + 2] = (Math.random() - 0.5) * 50;
+                
+                // Формируем сердце
+                const t = (i / particleCount) * Math.PI * 2;
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+                const z = (Math.random() - 0.5) * 2;
+                targetPositions[i * 3] = x * 0.5;
+                targetPositions[i * 3 + 1] = y * 0.5;
+                targetPositions[i * 3 + 2] = z * 0.5;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            const material = new THREE.PointsMaterial({ color: 0x00ffff, size: 0.1 });
+            const particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            camera.position.z = 30;
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const positions = particles.geometry.attributes.position.array;
+
+                // Двигаем частицы к целям
+                for (let i = 0; i < particleCount; i++) {
+                    positions[i * 3] += (targetPositions[i * 3] - positions[i * 3]) * 0.02;
+                    positions[i * 3 + 1] += (targetPositions[i * 3 + 1] - positions[i * 3 + 1]) * 0.02;
+                    positions[i * 3 + 2] += (targetPositions[i * 3 + 2] - positions[i * 3 + 2]) * 0.02;
+
+                    // Если частица близка к своей цели, перезапускаем её в новую позицию
+                    if (Math.abs(positions[i * 3] - targetPositions[i * 3]) < 0.01 &&
+                        Math.abs(positions[i * 3 + 1] - targetPositions[i * 3 + 1]) < 0.01 &&
+                        Math.abs(positions[i * 3 + 2] - targetPositions[i * 3 + 2]) < 0.01) {
+
+                        // Генерируем новую целевую позицию для частицы
+                        const t = Math.random() * Math.PI * 2;
+                        const x = 16 * Math.pow(Math.sin(t), 3);
+                        const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+                        const z = (Math.random() - 0.5) * 2;
+
+                        targetPositions[i * 3] = x * 0.5;
+                        targetPositions[i * 3 + 1] = y * 0.5;
+                        targetPositions[i * 3 + 2] = z * 0.5;
+                    }
+                }
+
+                particles.geometry.attributes.position.needsUpdate = true;
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+
