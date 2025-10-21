@@ -40,24 +40,37 @@
             0% { transform: translateY(0) scale(1); opacity: 1; }
             100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
         }
+
+        #back-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 20;
+            display: none;
+            transition: background-color 0.3s;
+        }
+        #back-button:hover {
+            background-color: rgba(255, 255, 255, 1);
+        }
     </style>
 </head>
 <body>
     <div id="text-container" onclick="nextText()">(●'◡'●)</div>
+    <button id="back-button" onclick="goBack()">Назад</button>
+
     <script>
-        const messages = ["тицяй в цетр саме цікаве в кінці", "ще трохии", "ТИ ЗМОЖЕШЬ", "Я В ТЕБЕ ВІРЮ","ну добре дивиьсь"];
+        const messages = ["тицяй в цетр саме цікаве в кінці", "ще трохии", "ТИ ЗМОЖЕШЬ", "Я В ТЕБЕ ВІРЮ", "ну добре дивиьсь"];
         let index = 0;
         const textContainer = document.getElementById("text-container");
 
-        function nextText() {
-            if (index < messages.length) {
-                textContainer.textContent = messages[index];
-                index++;
-            } else {
-                textContainer.style.display = "none";
-                startHeartAnimation();
-            }
-        }
+        let heartsInterval = setInterval(createHeart, 300);
+
         function nextText() {
             if (index < messages.length) {
                 createHeart();
@@ -68,6 +81,7 @@
                 document.body.style.backgroundColor = "black";
                 clearInterval(heartsInterval);
                 startHeartAnimation();
+                document.getElementById("back-button").style.display = "block"; // Показати кнопку
             }
         }
 
@@ -76,15 +90,16 @@
             heart.textContent = "❤️";
             heart.classList.add("heart");
             document.body.appendChild(heart);
-            
+
             heart.style.left = `${Math.random() * window.innerWidth}px`;
             heart.style.top = `${Math.random() * window.innerHeight}px`;
-            
+
             setTimeout(() => heart.remove(), 3000);
         }
 
-        heartsInterval = setInterval(createHeart, 300);
-
+        function goBack() {
+            location.reload(); // Або window.location.href = "index.html";
+        }
 
         function startHeartAnimation() {
             const scene = new THREE.Scene();
@@ -99,16 +114,17 @@
             const targetPositions = new Float32Array(particleCount * 3);
 
             for (let i = 0; i < particleCount; i++) {
-                // Исходные случайные позиции
+                // Початкові позиції
                 vertices[i * 3] = (Math.random() - 0.5) * 50;
                 vertices[i * 3 + 1] = (Math.random() - 0.5) * 50;
                 vertices[i * 3 + 2] = (Math.random() - 0.5) * 50;
-                
-                // Формируем сердце
+
+                // Формування серця
                 const t = (i / particleCount) * Math.PI * 2;
                 const x = 16 * Math.pow(Math.sin(t), 3);
                 const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
                 const z = (Math.random() - 0.5) * 2;
+
                 targetPositions[i * 3] = x * 0.5;
                 targetPositions[i * 3 + 1] = y * 0.5;
                 targetPositions[i * 3 + 2] = z * 0.5;
@@ -126,18 +142,16 @@
 
                 const positions = particles.geometry.attributes.position.array;
 
-                // Двигаем частицы к целям
                 for (let i = 0; i < particleCount; i++) {
                     positions[i * 3] += (targetPositions[i * 3] - positions[i * 3]) * 0.02;
                     positions[i * 3 + 1] += (targetPositions[i * 3 + 1] - positions[i * 3 + 1]) * 0.02;
                     positions[i * 3 + 2] += (targetPositions[i * 3 + 2] - positions[i * 3 + 2]) * 0.02;
 
-                    // Если частица близка к своей цели, перезапускаем её в новую позицию
-                    if (Math.abs(positions[i * 3] - targetPositions[i * 3]) < 0.01 &&
+                    if (
+                        Math.abs(positions[i * 3] - targetPositions[i * 3]) < 0.01 &&
                         Math.abs(positions[i * 3 + 1] - targetPositions[i * 3 + 1]) < 0.01 &&
-                        Math.abs(positions[i * 3 + 2] - targetPositions[i * 3 + 2]) < 0.01) {
-
-                        // Генерируем новую целевую позицию для частицы
+                        Math.abs(positions[i * 3 + 2] - targetPositions[i * 3 + 2]) < 0.01
+                    ) {
                         const t = Math.random() * Math.PI * 2;
                         const x = 16 * Math.pow(Math.sin(t), 3);
                         const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
@@ -152,6 +166,7 @@
                 particles.geometry.attributes.position.needsUpdate = true;
                 renderer.render(scene, camera);
             }
+
             animate();
         }
     </script>
